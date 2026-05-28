@@ -128,10 +128,27 @@
 
       <!-- USER PANEL -->
       <div id="userPanel" style="display:none">
-        <div class="user-welcome">
-          <i class="ti ti-circle-check welcome-icon"></i>
-          <h2>Bem-vindo!</h2>
-          <p>Você está conectado como usuário comum.<br>Apenas administradores têm acesso ao painel de gerenciamento.</p>
+        <div class="notepad-header">
+          <div>
+            <h2>Minhas notas</h2>
+            <p>Suas anotações são salvas automaticamente</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="clearNotes()">
+            <i class="ti ti-trash"></i> Limpar
+          </button>
+        </div>
+        <div class="notepad-wrap">
+          <textarea
+            id="notepad"
+            class="notepad"
+            placeholder="Escreva aqui suas anotações… tudo é salvo automaticamente."
+            oninput="onNoteInput()"
+            spellcheck="true"
+          ></textarea>
+          <div class="notepad-footer">
+            <span id="wordCount">0 palavras · 0 caracteres</span>
+            <span id="noteStatus"></span>
+          </div>
         </div>
       </div>
 

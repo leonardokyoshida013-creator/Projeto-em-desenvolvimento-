@@ -81,6 +81,17 @@ const DB = {
       user: users.filter(u => u.role === 'user').length,
     };
   },
+
+  // ---- Bloco de notas (por usuário) ----
+  getNotes(username) {
+    const key = 'notas_' + username.toLowerCase();
+    return localStorage.getItem(key) || '';
+  },
+
+  saveNotes(username, text) {
+    const key = 'notas_' + username.toLowerCase();
+    localStorage.setItem(key, text);
+  },
 };
 
 DB.init();

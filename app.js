@@ -138,6 +138,7 @@ function renderDashboard() {
   } else {
     hideEl('admPanel');
     showEl('userPanel');
+    loadNotes();
   }
 }
 
@@ -224,6 +225,48 @@ function createUser() {
   showAlert('modalSuccess', `Usuário "${name}" criado com sucesso!`);
   clearInputs('mName', 'mUser', 'mPass');
   setTimeout(() => { closeModal(); renderTable(); }, 1200);
+}
+
+// ---------- Bloco de notas ----------
+
+let noteSaveTimer = null;
+
+function loadNotes() {
+  const textarea = document.getElementById('notepad');
+  if (!textarea) return;
+  textarea.value = DB.getNotes(currentUser.username);
+  updateWordCount();
+}
+
+function onNoteInput() {
+  updateWordCount();
+  showNoteStatus('salvando…', false);
+  clearTimeout(noteSaveTimer);
+  noteSaveTimer = setTimeout(() => {
+    DB.saveNotes(currentUser.username, document.getElementById('notepad').value);
+    showNoteStatus('salvo ✓', true);
+  }, 800);
+}
+
+function updateWordCount() {
+  const text = document.getElementById('notepad').value;
+  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  const chars = text.length;
+  document.getElementById('wordCount').textContent = `${words} palavra${words !== 1 ? 's' : ''} · ${chars} caractere${chars !== 1 ? 's' : ''}`;
+}
+
+function showNoteStatus(msg, saved) {
+  const el = document.getElementById('noteStatus');
+  el.textContent = msg;
+  el.style.color = saved ? 'var(--green-text)' : 'var(--text-faint)';
+}
+
+function clearNotes() {
+  if (!confirm('Deseja apagar todas as notas? Isso não pode ser desfeito.')) return;
+  document.getElementById('notepad').value = '';
+  DB.saveNotes(currentUser.username, '');
+  updateWordCount();
+  showNoteStatus('apagado ✓', true);
 }
 
 // ---------- Logout ----------
