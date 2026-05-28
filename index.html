@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Acesso</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+</head>
+<body>
+
+  <div class="wrapper" id="app">
+
+    <!-- ========== LOGIN ========== -->
+    <div class="screen center-screen" id="loginScreen">
+      <div class="card auth-card">
+        <div class="auth-logo">
+          <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+          <h1>Sistema de Acesso</h1>
+          <p>Faça login para continuar</p>
+        </div>
+        <div class="alert alert-error" id="loginError"></div>
+        <div class="field">
+          <label for="loginUser">Usuário</label>
+          <input type="text" id="loginUser" placeholder="Digite seu usuário" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="loginPass">Senha</label>
+          <input type="password" id="loginPass" placeholder="Digite sua senha" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">
+          <i class="ti ti-login"></i> Entrar
+        </button>
+        <button class="btn-link" onclick="showRegister()">Criar nova conta →</button>
+      </div>
+    </div>
+
+    <!-- ========== REGISTER ========== -->
+    <div class="screen center-screen" id="registerScreen" style="display:none">
+      <div class="card auth-card">
+        <div class="auth-logo">
+          <div class="logo-icon"><i class="ti ti-user-plus"></i></div>
+          <h1>Criar conta</h1>
+          <p>Preencha os dados para se registrar</p>
+        </div>
+        <div class="alert alert-error" id="regError"></div>
+        <div class="alert alert-success" id="regSuccess"></div>
+        <div class="field">
+          <label for="regName">Nome completo</label>
+          <input type="text" id="regName" placeholder="Seu nome completo" />
+        </div>
+        <div class="field">
+          <label for="regUser">Usuário</label>
+          <input type="text" id="regUser" placeholder="Escolha um nome de usuário" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="regPass">Senha</label>
+          <input type="password" id="regPass" placeholder="Crie uma senha (mín. 4 caracteres)" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label for="regPassConf">Confirmar senha</label>
+          <input type="password" id="regPassConf" placeholder="Repita a senha" autocomplete="new-password" />
+        </div>
+        <button class="btn btn-primary" onclick="doRegister()">Criar conta</button>
+        <button class="btn-link" onclick="showLogin()">← Voltar ao login</button>
+      </div>
+    </div>
+
+    <!-- ========== DASHBOARD ========== -->
+    <div class="screen dashboard-screen" id="dashboard" style="display:none">
+
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="avatar" id="topAvatar"></div>
+          <div class="user-info">
+            <strong id="topName"></strong>
+            <span id="topUsername"></span>
+          </div>
+          <span class="badge" id="topBadge"></span>
+        </div>
+        <button class="btn btn-ghost" onclick="doLogout()">
+          <i class="ti ti-logout"></i> Sair
+        </button>
+      </header>
+
+      <!-- ADM PANEL -->
+      <div id="admPanel" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total de usuários</span>
+            <span class="stat-value" id="statTotal">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Administradores</span>
+            <span class="stat-value" id="statAdm">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Usuários comuns</span>
+            <span class="stat-value" id="statUsers">0</span>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <h2>Gerenciar usuários</h2>
+          <button class="btn btn-primary" onclick="openModal()">
+            <i class="ti ti-plus"></i> Novo usuário
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Usuário</th>
+                <th>Tipo</th>
+                <th>Criado em</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USER PANEL -->
+      <div id="userPanel" style="display:none">
+        <div class="user-welcome">
+          <i class="ti ti-circle-check welcome-icon"></i>
+          <h2>Bem-vindo!</h2>
+          <p>Você está conectado como usuário comum.<br>Apenas administradores têm acesso ao painel de gerenciamento.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== MODAL ========== -->
+    <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="handleOverlayClick(event)">
+      <div class="card modal-card">
+        <div class="modal-header">
+          <h3>Novo usuário</h3>
+          <button class="btn-icon" onclick="closeModal()" aria-label="Fechar"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="alert alert-error" id="modalError"></div>
+        <div class="alert alert-success" id="modalSuccess"></div>
+        <div class="field">
+          <label for="mName">Nome completo</label>
+          <input type="text" id="mName" placeholder="Nome do usuário" />
+        </div>
+        <div class="field">
+          <label for="mUser">Usuário (login)</label>
+          <input type="text" id="mUser" placeholder="Username único" />
+        </div>
+        <div class="field">
+          <label for="mPass">Senha</label>
+          <input type="password" id="mPass" placeholder="Senha inicial" />
+        </div>
+        <button class="btn btn-primary" onclick="createUser()">
+          <i class="ti ti-user-check"></i> Criar usuário
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
