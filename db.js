@@ -1,97 +1,140 @@
 // ============================================================
-//  db.js — banco de dados em localStorage
-//  Os dados ficam salvos no navegador, persistindo entre sessões.
+//  db.js — banco de dados em Firebase Firestore
+//  Dados sincronizados em nuvem, acessíveis de qualquer dispositivo.
+//
+//  CONFIGURAÇÃO NECESSÁRIA:
+//  1. Acesse https://console.firebase.google.com
+//  2. Crie um projeto → Firestore Database → Modo produção
+//  3. Vá em "Configurações do projeto" → "Seus aplicativos" → Web (</>)
+//  4. Copie os valores do firebaseConfig e cole abaixo
+//  5. Em Firestore, vá em Regras e cole as regras do arquivo FIREBASE_RULES.txt
 // ============================================================
 
-const DB_KEY = 'sistema_usuarios';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDoc, getDocs,
+  setDoc, deleteDoc, query, where, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// =====================================================
+//  ⚙️  SUBSTITUA PELOS SEUS DADOS DO FIREBASE ABAIXO
+// =====================================================
+const firebaseConfig = {
+  apiKey:            "COLE_AQUI",
+  authDomain:        "COLE_AQUI",
+  projectId:         "COLE_AQUI",
+  storageBucket:     "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId:             "COLE_AQUI"
+};
+// =====================================================
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const USERS_COL  = "usuarios";
+const NOTES_COL  = "notas";
+
+// Usuários ADM padrão — só serão criados se ainda não existirem
 const DEFAULT_USERS = [
-  { id: 1, name: 'Leonardo', username: 'leonardo', password: 'adm123', role: 'adm', createdAt: '01/01/2025' },
-  { id: 2, name: 'Abner',    username: 'abner',    password: 'adm123', role: 'adm', createdAt: '01/01/2025' },
-  { id: 3, name: 'Isabela',  username: 'isabela',  password: 'adm123', role: 'adm', createdAt: '01/01/2025' },
-  { id: 4, name: 'Matheus',  username: 'matheus',  password: 'adm123', role: 'adm', createdAt: '01/01/2025' },
+  { id: "1", name: "Leonardo", username: "leonardo", password: "adm123", role: "adm", createdAt: "01/01/2025" },
+  { id: "2", name: "Abner",    username: "abner",    password: "adm123", role: "adm", createdAt: "01/01/2025" },
+  { id: "3", name: "Isabela",  username: "isabela",  password: "adm123", role: "adm", createdAt: "01/01/2025" },
+  { id: "4", name: "Matheus",  username: "matheus",  password: "adm123", role: "adm", createdAt: "01/01/2025" },
 ];
 
+// ============================================================
+//  Objeto DB — mesma interface do db.js original
+//  (app.js não precisa ser alterado)
+// ============================================================
 const DB = {
 
-  // ---- Inicialização ----
-  init() {
-    if (!localStorage.getItem(DB_KEY)) {
-      this._save({ users: DEFAULT_USERS, nextId: 5 });
+  // ---- Inicialização: garante que os ADMs existem ----
+  async init() {
+    for (const u of DEFAULT_USERS) {
+      const ref = doc(db, USERS_COL, u.username);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, u);
+      }
     }
   },
 
-  // ---- Leitura ----
-  _load() {
-    return JSON.parse(localStorage.getItem(DB_KEY));
-  },
-
-  // ---- Escrita ----
-  _save(data) {
-    localStorage.setItem(DB_KEY, JSON.stringify(data));
-  },
-
   // ---- Listar todos os usuários ----
-  getAll() {
-    return this._load().users;
+  async getAll() {
+    const snap = await getDocs(collection(db, USERS_COL));
+    return snap.docs.map(d => d.data());
   },
 
   // ---- Buscar por username ----
-  findByUsername(username) {
-    return this._load().users.find(u => u.username.toLowerCase() === username.toLowerCase()) || null;
+  async findByUsername(username) {
+    const ref  = doc(db, USERS_COL, username.toLowerCase());
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data() : null;
   },
 
   // ---- Autenticar ----
-  authenticate(username, password) {
-    const user = this.findByUsername(username);
+  async authenticate(username, password) {
+    const user = await this.findByUsername(username);
     if (user && user.password === password) return user;
     return null;
   },
 
   // ---- Criar usuário ----
-  createUser({ name, username, password }) {
-    const data = this._load();
-    if (this.findByUsername(username)) return { ok: false, error: 'Nome de usuário já existe.' };
+  async createUser({ name, username, password }) {
+    const existing = await this.findByUsername(username);
+    if (existing) return { ok: false, error: "Nome de usuário já existe." };
+
+    // Gera ID único baseado em timestamp
+    const allUsers = await this.getAll();
+    const maxId = allUsers.reduce((m, u) => Math.max(m, parseInt(u.id) || 0), 0);
+
     const newUser = {
-      id: data.nextId++,
+      id:        String(maxId + 1),
       name,
-      username: username.toLowerCase(),
+      username:  username.toLowerCase(),
       password,
-      role: 'user',
-      createdAt: new Date().toLocaleDateString('pt-BR'),
+      role:      "user",
+      createdAt: new Date().toLocaleDateString("pt-BR"),
     };
-    data.users.push(newUser);
-    this._save(data);
+
+    await setDoc(doc(db, USERS_COL, newUser.username), newUser);
     return { ok: true, user: newUser };
   },
 
   // ---- Remover usuário ----
-  deleteUser(id) {
-    const data = this._load();
-    data.users = data.users.filter(u => u.id !== id);
-    this._save(data);
+  async deleteUser(id) {
+    const allUsers = await this.getAll();
+    const user = allUsers.find(u => String(u.id) === String(id));
+    if (user) {
+      await deleteDoc(doc(db, USERS_COL, user.username));
+      // Remove as notas também
+      await deleteDoc(doc(db, NOTES_COL, user.username));
+    }
   },
 
   // ---- Estatísticas ----
-  stats() {
-    const users = this._load().users;
+  async stats() {
+    const users = await this.getAll();
     return {
       total: users.length,
-      adm: users.filter(u => u.role === 'adm').length,
-      user: users.filter(u => u.role === 'user').length,
+      adm:   users.filter(u => u.role === "adm").length,
+      user:  users.filter(u => u.role === "user").length,
     };
   },
 
-  // ---- Bloco de notas (por usuário) ----
-  getNotes(username) {
-    const key = 'notas_' + username.toLowerCase();
-    return localStorage.getItem(key) || '';
+  // ---- Bloco de notas ----
+  async getNotes(username) {
+    const ref  = doc(db, NOTES_COL, username.toLowerCase());
+    const snap = await getDoc(ref);
+    return snap.exists() ? (snap.data().text || "") : "";
   },
 
-  saveNotes(username, text) {
-    const key = 'notas_' + username.toLowerCase();
-    localStorage.setItem(key, text);
+  async saveNotes(username, text) {
+    await setDoc(doc(db, NOTES_COL, username.toLowerCase()), { text });
   },
 };
 
-DB.init();
+// Inicializa (cria ADMs padrão se necessário) e exporta
+await DB.init();
+export { DB };

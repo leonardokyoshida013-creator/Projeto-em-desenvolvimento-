@@ -1,6 +1,8 @@
 // ============================================================
-//  app.js — lógica da aplicação
+//  app.js — lógica da aplicação (versão Firebase/async)
 // ============================================================
+
+import { DB } from './db.js';
 
 let currentUser = null;
 
@@ -57,7 +59,7 @@ function showRegister() {
 
 // ---------- Login ----------
 
-function doLogin() {
+async function doLogin() {
   hideAlert('loginError');
   const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
@@ -67,7 +69,16 @@ function doLogin() {
     return;
   }
 
-  const user = DB.authenticate(username, password);
+  // Feedback visual de carregamento
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
+
+  const user = await DB.authenticate(username, password);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-login"></i> Entrar';
+
   if (!user) {
     showAlert('loginError', 'Usuário ou senha incorretos.');
     return;
@@ -89,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---------- Registro ----------
 
-function doRegister() {
+async function doRegister() {
   hideAlert('regError');
   hideAlert('regSuccess');
 
@@ -111,28 +122,35 @@ function doRegister() {
     return;
   }
 
-  const result = DB.createUser({ name, username, password });
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true;
+  btn.textContent = 'Criando…';
+
+  const result = await DB.createUser({ name, username, password });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-user-plus"></i> Criar conta';
+
   if (!result.ok) {
     showAlert('regError', result.error);
     return;
   }
 
-  showAlert('regSuccess', 'Conta criada com sucesso! Redirecionando...');
+  showAlert('regSuccess', 'Conta criada com sucesso! Redirecionando…');
   setTimeout(() => showLogin(), 1800);
 }
 
 // ---------- Dashboard ----------
 
-function renderDashboard() {
+async function renderDashboard() {
   hideEl('landingScreen');
   hideEl('loginScreen');
   hideEl('registerScreen');
   showEl('dashboard');
 
-  // Topbar
   const av = document.getElementById('topAvatar');
-  av.textContent    = initials(currentUser.name);
-  av.className      = 'avatar ' + currentUser.role;
+  av.textContent = initials(currentUser.name);
+  av.className   = 'avatar ' + currentUser.role;
 
   document.getElementById('topName').textContent     = currentUser.name;
   document.getElementById('topUsername').textContent = '@' + currentUser.username;
@@ -144,30 +162,40 @@ function renderDashboard() {
   if (currentUser.role === 'adm') {
     showEl('admPanel');
     hideEl('userPanel');
-    renderTable();
+    await renderTable();
   } else {
     hideEl('admPanel');
     showEl('userPanel');
-    loadNotes();
+    await loadNotes();
   }
 }
 
 // ---------- Tabela de usuários ----------
 
-function renderTable() {
-  const s = DB.stats();
+async function renderTable() {
+  const s = await DB.stats();
   document.getElementById('statTotal').textContent = s.total;
   document.getElementById('statAdm').textContent   = s.adm;
   document.getElementById('statUsers').textContent = s.user;
 
   const tbody = document.getElementById('userTableBody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:1.5rem">Carregando…</td></tr>';
+
+  const users = await DB.getAll();
   tbody.innerHTML = '';
 
-  DB.getAll().forEach(u => {
+  // Busca notas de todos os usuários comuns em paralelo
+  const notePromises = users
+    .filter(u => u.role === 'user')
+    .map(u => DB.getNotes(u.username).then(n => [u.username, n]));
+  const notesMap = Object.fromEntries(await Promise.all(notePromises));
+
+  users.forEach(u => {
     const canDelete = u.role !== 'adm' && u.id !== currentUser.id;
-    const notes = DB.getNotes(u.username);
-    const hasNotes = notes.trim().length > 0;
+    const notes     = notesMap[u.username] || '';
+    const hasNotes  = notes.trim().length > 0;
     const wordCount = hasNotes ? notes.trim().split(/\s+/).length : 0;
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
@@ -181,12 +209,12 @@ function renderTable() {
       <td style="color:var(--text-muted)">${u.createdAt}</td>
       <td>${u.role === 'user'
         ? hasNotes
-          ? `<button class="btn-notes" onclick="viewNotes('${u.username}','${u.name}')"><i class="ti ti-notes"></i> ${wordCount} pal.</button>`
+          ? `<button class="btn-notes" onclick="viewNotes('${u.username}','${escapeHtml(u.name)}')"><i class="ti ti-notes"></i> ${wordCount} pal.</button>`
           : '<span style="color:var(--text-faint);font-size:12px">vazio</span>'
         : '<span style="color:var(--text-faint);font-size:13px">—</span>'
       }</td>
       <td>${canDelete
-        ? `<button class="btn-delete" onclick="deleteUser(${u.id})">Remover</button>`
+        ? `<button class="btn-delete" onclick="deleteUser('${u.id}')">Remover</button>`
         : `<span style="color:var(--text-faint);font-size:13px">—</span>`
       }</td>
     `;
@@ -194,22 +222,22 @@ function renderTable() {
   });
 }
 
-function deleteUser(id) {
+async function deleteUser(id) {
   if (!confirm('Tem certeza que deseja remover este usuário?')) return;
-  DB.deleteUser(id);
-  renderTable();
+  await DB.deleteUser(id);
+  await renderTable();
 }
 
 // ---------- Modal ver notas (ADM) ----------
 
-function viewNotes(username, name) {
-  const notes = DB.getNotes(username);
+async function viewNotes(username, name) {
+  const notes = await DB.getNotes(username);
   const words = notes.trim() === '' ? 0 : notes.trim().split(/\s+/).length;
   const chars = notes.length;
-  document.getElementById('notesModalTitle').textContent = 'Notas de ' + name;
-  document.getElementById('notesModalSub').textContent = '@' + username;
+  document.getElementById('notesModalTitle').textContent   = 'Notas de ' + name;
+  document.getElementById('notesModalSub').textContent     = '@' + username;
   document.getElementById('notesModalContent').textContent = notes || '(sem conteúdo)';
-  document.getElementById('notesModalCount').textContent = words + ' palavras · ' + chars + ' caracteres';
+  document.getElementById('notesModalCount').textContent   = words + ' palavras · ' + chars + ' caracteres';
   flexEl('notesModalOverlay');
 }
 
@@ -239,7 +267,7 @@ function handleOverlayClick(e) {
   if (e.target.id === 'modalOverlay') closeModal();
 }
 
-function createUser() {
+async function createUser() {
   hideAlert('modalError');
   hideAlert('modalSuccess');
 
@@ -256,7 +284,15 @@ function createUser() {
     return;
   }
 
-  const result = DB.createUser({ name, username, password });
+  const btn = document.getElementById('modalCreateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Criando…';
+
+  const result = await DB.createUser({ name, username, password });
+
+  btn.disabled = false;
+  btn.textContent = 'Criar usuário';
+
   if (!result.ok) {
     showAlert('modalError', result.error);
     return;
@@ -264,17 +300,17 @@ function createUser() {
 
   showAlert('modalSuccess', `Usuário "${name}" criado com sucesso!`);
   clearInputs('mName', 'mUser', 'mPass');
-  setTimeout(() => { closeModal(); renderTable(); }, 1200);
+  setTimeout(async () => { closeModal(); await renderTable(); }, 1200);
 }
 
 // ---------- Bloco de notas ----------
 
 let noteSaveTimer = null;
 
-function loadNotes() {
+async function loadNotes() {
   const textarea = document.getElementById('notepad');
   if (!textarea) return;
-  textarea.value = DB.getNotes(currentUser.username);
+  textarea.value = await DB.getNotes(currentUser.username);
   updateWordCount();
 }
 
@@ -282,14 +318,14 @@ function onNoteInput() {
   updateWordCount();
   showNoteStatus('salvando…', false);
   clearTimeout(noteSaveTimer);
-  noteSaveTimer = setTimeout(() => {
-    DB.saveNotes(currentUser.username, document.getElementById('notepad').value);
+  noteSaveTimer = setTimeout(async () => {
+    await DB.saveNotes(currentUser.username, document.getElementById('notepad').value);
     showNoteStatus('salvo ✓', true);
   }, 800);
 }
 
 function updateWordCount() {
-  const text = document.getElementById('notepad').value;
+  const text  = document.getElementById('notepad').value;
   const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
   const chars = text.length;
   document.getElementById('wordCount').textContent = `${words} palavra${words !== 1 ? 's' : ''} · ${chars} caractere${chars !== 1 ? 's' : ''}`;
@@ -301,10 +337,10 @@ function showNoteStatus(msg, saved) {
   el.style.color = saved ? 'var(--green-text)' : 'var(--text-faint)';
 }
 
-function clearNotes() {
+async function clearNotes() {
   if (!confirm('Deseja apagar todas as notas? Isso não pode ser desfeito.')) return;
   document.getElementById('notepad').value = '';
-  DB.saveNotes(currentUser.username, '');
+  await DB.saveNotes(currentUser.username, '');
   updateWordCount();
   showNoteStatus('apagado ✓', true);
 }
@@ -325,3 +361,22 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// ---------- Expõe funções para o HTML ----------
+// Necessário pois o módulo ES não polui o escopo global automaticamente
+window.showLogin          = showLogin;
+window.showRegister       = showRegister;
+window.showLanding        = showLanding;
+window.doLogin            = doLogin;
+window.doRegister         = doRegister;
+window.doLogout           = doLogout;
+window.openModal          = openModal;
+window.closeModal         = closeModal;
+window.handleOverlayClick = handleOverlayClick;
+window.createUser         = createUser;
+window.deleteUser         = deleteUser;
+window.viewNotes          = viewNotes;
+window.closeNotesModal    = closeNotesModal;
+window.handleNotesOverlayClick = handleNotesOverlayClick;
+window.onNoteInput        = onNoteInput;
+window.clearNotes         = clearNotes;

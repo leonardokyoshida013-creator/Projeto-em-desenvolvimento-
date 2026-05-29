@@ -312,7 +312,7 @@
           <label for="loginPass">Senha</label>
           <input type="password" id="loginPass" placeholder="Digite sua senha" autocomplete="current-password" />
         </div>
-        <button class="btn btn-primary" onclick="doLogin()">
+        <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
           <i class="ti ti-login"></i> Entrar
         </button>
         <button class="btn-link" onclick="showRegister()">Criar nova conta →</button>
@@ -346,7 +346,9 @@
           <label for="regPassConf">Confirmar senha</label>
           <input type="password" id="regPassConf" placeholder="Repita a senha" autocomplete="new-password" />
         </div>
-        <button class="btn btn-primary" onclick="doRegister()">Criar conta</button>
+        <button class="btn btn-primary" id="regBtn" onclick="doRegister()">
+          <i class="ti ti-user-plus"></i> Criar conta
+        </button>
         <button class="btn-link" onclick="showLogin()">← Voltar ao login</button>
       </div>
     </div>
@@ -478,7 +480,7 @@
           <label for="mPass">Senha</label>
           <input type="password" id="mPass" placeholder="Senha inicial" />
         </div>
-        <button class="btn btn-primary" onclick="createUser()">
+        <button class="btn btn-primary" id="modalCreateBtn" onclick="createUser()">
           <i class="ti ti-user-check"></i> Criar usuário
         </button>
       </div>
@@ -486,7 +488,6 @@
 
   </div>
 
-  <script src="db.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
