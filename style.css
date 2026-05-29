@@ -343,6 +343,10 @@ tbody tr:hover td { background: var(--surface2); }
 }
 .modal-header h3 { font-size: 16px; font-weight: 600; }
 .modal-card .btn-primary { margin-top: 0.75rem; }
+.modal-card textarea {
+  max-height: 150px;
+  resize: none;
+}
 
 /* ===== NOTEPAD ===== */
 .notepad-header {
