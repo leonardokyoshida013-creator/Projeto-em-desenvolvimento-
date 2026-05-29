@@ -211,15 +211,22 @@ async function renderTable() {
       <td style="color:var(--text-muted)">${u.createdAt}</td>
       <td>${u.role === 'user'
         ? hasNotes
-          ? `<button class="btn-notes" onclick="viewNotes('${u.username}','${escapeHtml(u.name)}')"><i class="ti ti-notes"></i> ${wordCount} pal.</button>`
+          ? `<button class="btn-notes" data-username="${escapeHtml(u.username)}" data-name="${escapeHtml(u.name)}"><i class="ti ti-notes"></i> ${wordCount} pal.</button>`
           : '<span style="color:var(--text-faint);font-size:12px">vazio</span>'
         : '<span style="color:var(--text-faint);font-size:13px">—</span>'
       }</td>
       <td>${canDelete
-        ? `<button class="btn-delete" onclick="deleteUser('${u.id}')">Remover</button>`
+        ? `<button class="btn-delete" data-userid="${escapeHtml(String(u.id))}">Remover</button>`
         : `<span style="color:var(--text-faint);font-size:13px">—</span>`
       }</td>
     `;
+    // Attach event listeners safely (avoids XSS via inline onclick)
+    if (u.role === 'user' && hasNotes) {
+      tr.querySelector('.btn-notes').addEventListener('click', () => viewNotes(u.username, u.name));
+    }
+    if (canDelete) {
+      tr.querySelector('.btn-delete').addEventListener('click', () => deleteUser(u.id));
+    }
     return tr;
   }
 
@@ -349,7 +356,7 @@ async function createUser() {
   const result = await DB.createUser({ name, username, password });
 
   btn.disabled = false;
-  btn.textContent = 'Criar usuário';
+  btn.innerHTML = '<i class="ti ti-user-check"></i> Criar usuário';
 
   if (!result.ok) {
     showAlert('modalError', result.error);
@@ -441,6 +448,7 @@ function openNoteModal(id = null) {
       document.getElementById('noteDesc').value    = note.desc;
       document.getElementById('noteContent').value = note.content;
       flexEl('noteModalOverlay');
+      setTimeout(() => document.getElementById('noteDesc').focus(), 50);
     });
   } else {
     // Modo criação — data padrão = hoje
