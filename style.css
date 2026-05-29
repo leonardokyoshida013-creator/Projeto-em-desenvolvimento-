@@ -325,6 +325,10 @@ tbody tr:hover td { background: var(--surface2); }
   z-index: 100;
   padding: 1rem;
   backdrop-filter: blur(2px);
+  overflow-y: auto;
+  align-items: flex-start;
+  padding-top: max(1rem, 5vh);
+  padding-bottom: max(1rem, 5vh);
 }
 .modal-card {
   width: 100%;
