@@ -20,12 +20,12 @@ import {
 //  ⚙️  SUBSTITUA PELOS SEUS DADOS DO FIREBASE ABAIXO
 // =====================================================
 const firebaseConfig = {
-  apiKey:            "COLE_AQUI",
-  authDomain:        "COLE_AQUI",
-  projectId:         "COLE_AQUI",
-  storageBucket:     "COLE_AQUI",
-  messagingSenderId: "COLE_AQUI",
-  appId:             "COLE_AQUI"
+  apiKey: "AIzaSyDbCZZtRHDn_BXOSOSCk54g62izOTyFFYc",
+  authDomain: "banco-seguro-1aa9b.firebaseapp.com",
+  projectId: "banco-seguro-1aa9b",
+  storageBucket: "banco-seguro-1aa9b.firebasestorage.app",
+  messagingSenderId: "247629826149",
+  appId: "1:247629826149:web:0af77cbada0f263da1de8c"
 };
 // =====================================================
 
@@ -37,10 +37,10 @@ const NOTES_COL  = "notas";
 
 // Usuários ADM padrão — só serão criados se ainda não existirem
 const DEFAULT_USERS = [
-  { id: "1", name: "Leonardo", username: "leonardo", password: "adm123", role: "adm", createdAt: "01/01/2025" },
-  { id: "2", name: "Abner",    username: "abner",    password: "adm123", role: "adm", createdAt: "01/01/2025" },
-  { id: "3", name: "Isabela",  username: "isabela",  password: "adm123", role: "adm", createdAt: "01/01/2025" },
-  { id: "4", name: "Matheus",  username: "matheus",  password: "adm123", role: "adm", createdAt: "01/01/2025" },
+  { id: "1", name: "Leonardo", username: "leonardo", password: "adm123", role: "adm", createdAt: "27/05/2025" },
+  { id: "2", name: "Abner",    username: "abner",    password: "adm123", role: "adm", createdAt: "27/05/2025" },
+  { id: "3", name: "Isabela",  username: "isabela",  password: "adm123", role: "adm", createdAt: "27/05/2025" },
+  { id: "4", name: "Matheus",  username: "matheus",  password: "adm123", role: "adm", createdAt: "27/05/2025" },
 ];
 
 // ============================================================
