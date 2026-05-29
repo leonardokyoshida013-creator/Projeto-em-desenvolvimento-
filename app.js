@@ -181,21 +181,23 @@ async function renderTable() {
   const tbody = document.getElementById('userTableBody');
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:1.5rem">Carregando…</td></tr>';
 
-  const users = await DB.getAll();
+  const allUsers = await DB.getAll();
   tbody.innerHTML = '';
 
-  // Busca notas de todos os usuários comuns em paralelo
-  const notePromises = users
-    .filter(u => u.role === 'user')
-    .map(u => DB.getNotes(u.username).then(n => [u.username, n]));
+  // Separa e ordena alfabeticamente por nome
+  const sortByName = (a, b) => a.name.localeCompare(b.name, 'pt-BR');
+  const adms   = allUsers.filter(u => u.role === 'adm').sort(sortByName);
+  const common = allUsers.filter(u => u.role === 'user').sort(sortByName);
+
+  // Busca notas dos usuários comuns em paralelo
+  const notePromises = common.map(u => DB.getNotes(u.username).then(n => [u.username, n]));
   const notesMap = Object.fromEntries(await Promise.all(notePromises));
 
-  users.forEach(u => {
-    const canDelete = u.role !== 'adm' && u.id !== currentUser.id;
+  function buildRow(u) {
+    const canDelete = u.role !== 'adm';
     const notes     = notesMap[u.username] || '';
     const hasNotes  = notes.trim().length > 0;
     const wordCount = hasNotes ? notes.trim().split(/\s+/).length : 0;
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
@@ -218,8 +220,39 @@ async function renderTable() {
         : `<span style="color:var(--text-faint);font-size:13px">—</span>`
       }</td>
     `;
+    return tr;
+  }
+
+  function buildDivider(label, count) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td colspan="6" style="
+        background:var(--surface2);
+        padding:6px 16px;
+        font-size:11px;
+        font-weight:600;
+        color:var(--text-muted);
+        text-transform:uppercase;
+        letter-spacing:0.06em;
+        border-top:1px solid var(--border);
+      ">${label} <span style="font-weight:400;opacity:0.6">(${count})</span></td>
+    `;
+    return tr;
+  }
+
+  // Grupo ADM
+  tbody.appendChild(buildDivider('Administradores', adms.length));
+  adms.forEach(u => tbody.appendChild(buildRow(u)));
+
+  // Grupo Usuários
+  tbody.appendChild(buildDivider('Usuários', common.length));
+  if (common.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="6" style="text-align:center;color:var(--text-faint);padding:1.25rem;font-size:13px">Nenhum usuário cadastrado</td>`;
     tbody.appendChild(tr);
-  });
+  } else {
+    common.forEach(u => tbody.appendChild(buildRow(u)));
+  }
 }
 
 async function deleteUser(id) {
