@@ -29,7 +29,15 @@ function clearInputs(...ids) {
 
 // ---------- Navegação entre telas ----------
 
+function showLanding() {
+  showEl('landingScreen');
+  hideEl('loginScreen');
+  hideEl('registerScreen');
+  hideEl('dashboard');
+}
+
 function showLogin() {
+  hideEl('landingScreen');
   flexEl('loginScreen');
   hideEl('registerScreen');
   hideEl('dashboard');
@@ -38,6 +46,7 @@ function showLogin() {
 }
 
 function showRegister() {
+  hideEl('landingScreen');
   hideEl('loginScreen');
   flexEl('registerScreen');
   hideEl('dashboard');
@@ -115,6 +124,7 @@ function doRegister() {
 // ---------- Dashboard ----------
 
 function renderDashboard() {
+  hideEl('landingScreen');
   hideEl('loginScreen');
   hideEl('registerScreen');
   showEl('dashboard');
@@ -303,7 +313,7 @@ function clearNotes() {
 
 function doLogout() {
   currentUser = null;
-  showLogin();
+  showLanding();
 }
 
 // ---------- Segurança básica (XSS) ----------

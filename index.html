@@ -3,19 +3,311 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema de Acesso</title>
+  <title>BancoSeguro — O sistema mais seguro do mundo</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+  <style>
+    /* ===== LANDING PAGE ===== */
+    #landingScreen { display: block; }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    .lp-page{font-family:'DM Sans',sans-serif;background:#0a0f1e;overflow-x:hidden}
+    .lp-hero{
+      background:#0a0f1e;
+      padding:3.5rem 2rem 3rem;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero-grid{
+      position:absolute;inset:0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.07) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(59,130,246,0.07) 1px,transparent 1px);
+      background-size:32px 32px;
+      animation: gridPulse 6s ease-in-out infinite;
+    }
+    @keyframes gridPulse {
+      0%,100%{opacity:0.6} 50%{opacity:1}
+    }
+    .hero-glow{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);
+      width:500px;height:300px;
+      background:radial-gradient(ellipse,rgba(55,138,221,0.18) 0%,transparent 70%);
+      pointer-events:none;
+    }
+    .hero-inner{position:relative;z-index:1}
+
+    .shield-wrap{
+      width:80px;height:80px;border-radius:50%;
+      background:#0C447C;
+      border:2px solid #378ADD;
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 1.5rem;
+      font-size:34px;color:#B5D4F4;
+      box-shadow:0 0 40px rgba(55,138,221,0.35);
+      animation: shieldPulse 3s ease-in-out infinite;
+    }
+    @keyframes shieldPulse {
+      0%,100%{box-shadow:0 0 40px rgba(55,138,221,0.35)}
+      50%{box-shadow:0 0 70px rgba(55,138,221,0.55)}
+    }
+
+    .lp-nav {
+      position:absolute;top:1.25rem;right:1.5rem;z-index:10;
+      display:flex;gap:10px;align-items:center;
+    }
+    .btn-nav-login {
+      background:transparent;color:#378ADD;
+      border:1px solid rgba(55,138,221,0.5);border-radius:9px;
+      padding:7px 18px;font-size:13px;font-weight:500;
+      cursor:pointer;font-family:'DM Sans',sans-serif;
+      transition:all 0.2s;
+    }
+    .btn-nav-login:hover{background:rgba(55,138,221,0.1);border-color:#378ADD;}
+
+    .lp-hero h1{font-size:28px;font-weight:600;color:#f1f5f9;line-height:1.25;margin-bottom:.875rem}
+    .lp-hero h1 span{color:#378ADD}
+    .lp-hero p{font-size:14px;color:#94a3b8;max-width:440px;margin:0 auto 2rem;line-height:1.75}
+
+    .btn-hero{
+      display:inline-flex;align-items:center;gap:8px;
+      background:#185FA5;color:#E6F1FB;
+      border:1px solid #378ADD;border-radius:10px;
+      padding:12px 28px;font-size:14px;font-weight:500;
+      cursor:pointer;font-family:'DM Sans',sans-serif;
+      transition:all 0.2s;
+      box-shadow:0 4px 20px rgba(55,138,221,0.25);
+    }
+    .btn-hero:hover{background:#0C447C;box-shadow:0 4px 30px rgba(55,138,221,0.45);transform:translateY(-1px)}
+    .btn-hero:active{transform:translateY(0)}
+
+    .trust-bar{
+      background:#0e1629;
+      border-top:0.5px solid #1e3a5f;
+      padding:.875rem 2rem;
+      display:flex;align-items:center;justify-content:center;gap:2rem;
+      flex-wrap:wrap;
+    }
+    .trust-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b}
+    .trust-item i{font-size:14px;color:#378ADD}
+    .trust-item strong{color:#94a3b8;font-weight:500}
+
+    .lp-features{
+      padding:2rem 1.5rem;
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;
+    }
+    .feat-card{
+      background:#0e1629;
+      border:0.5px solid #1e3a5f;
+      border-radius:12px;
+      padding:1.25rem;
+      transition:border-color 0.2s,transform 0.2s;
+    }
+    .feat-card:hover{border-color:#378ADD;transform:translateY(-2px)}
+    .feat-icon{
+      width:38px;height:38px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;margin-bottom:.875rem;
+    }
+    .feat-card h3{font-size:14px;font-weight:500;color:#e2e8f0;margin-bottom:5px}
+    .feat-card p{font-size:12px;color:#64748b;line-height:1.65}
+
+    .lp-stats{
+      border-top:0.5px solid #1e3a5f;
+      padding:1.75rem 1.5rem;
+      display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+      background:#1e3a5f;
+    }
+    .stat-col{
+      background:#0a0f1e;
+      padding:1.5rem 1rem;text-align:center;
+    }
+    .stat-num{font-size:26px;font-weight:500;color:#e2e8f0;font-family:'DM Mono',monospace}
+    .stat-lbl{font-size:11px;color:#64748b;margin-top:4px;line-height:1.4}
+
+    .lp-testimonial{
+      margin:0 1.5rem 1.5rem;
+      background:#0e1629;
+      border:0.5px solid #1e3a5f;
+      border-radius:14px;
+      padding:1.5rem;
+    }
+    .lp-stars{color:#EF9F27;font-size:13px;letter-spacing:1px;margin-bottom:.75rem}
+    .lp-quote{font-size:13px;color:#94a3b8;line-height:1.75;font-style:italic;margin-bottom:1rem}
+    .quote-author{display:flex;align-items:center;gap:10px}
+    .author-av{
+      width:34px;height:34px;border-radius:50%;
+      background:#0C447C;color:#B5D4F4;
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:600;border:1px solid #378ADD;
+    }
+    .author-name{font-size:13px;font-weight:500;color:#e2e8f0}
+    .author-role{font-size:11px;color:#64748b}
+
+    .lp-cta{
+      background:#0a0f1e;
+      padding:2.5rem 1.5rem;
+      text-align:center;
+      position:relative;border-top:0.5px solid #1e3a5f;
+    }
+    .lp-cta::before{
+      content:'';position:absolute;inset:0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.05) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(59,130,246,0.05) 1px,transparent 1px);
+      background-size:24px 24px;
+    }
+    .cta-inner{position:relative;z-index:1}
+    .lp-cta h2{font-size:20px;font-weight:600;color:#f1f5f9;margin-bottom:.5rem}
+    .lp-cta p{font-size:13px;color:#64748b;margin-bottom:1.5rem}
+    .btn-cta{
+      display:inline-flex;align-items:center;gap:8px;
+      background:transparent;color:#378ADD;
+      border:1px solid #378ADD;border-radius:10px;
+      padding:11px 24px;font-size:14px;font-weight:500;
+      cursor:pointer;font-family:'DM Sans',sans-serif;
+      transition:all 0.2s;
+    }
+    .btn-cta:hover{background:#0e1f38;transform:translateY(-1px)}
+    .badge-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1.25rem;flex-wrap:wrap}
+    .badge-pill{
+      display:flex;align-items:center;gap:5px;
+      background:#0e1629;border:0.5px solid #1e3a5f;
+      border-radius:99px;padding:5px 13px;
+      font-size:11px;color:#64748b;
+    }
+    .badge-pill i{font-size:12px;color:#378ADD}
+
+    /* Fade-in animation for landing */
+    @keyframes fadeUp {
+      from{opacity:0;transform:translateY(20px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .hero-inner { animation: fadeUp 0.7s ease both; }
+    .trust-bar { animation: fadeUp 0.7s 0.15s ease both; }
+    .lp-features { animation: fadeUp 0.7s 0.25s ease both; }
+    .lp-stats { animation: fadeUp 0.7s 0.35s ease both; }
+    .lp-testimonial { animation: fadeUp 0.7s 0.45s ease both; }
+    .lp-cta { animation: fadeUp 0.7s 0.5s ease both; }
+
+    /* Screen transition */
+    .screen { animation: fadeUp 0.4s ease both; }
+  </style>
 </head>
 <body>
 
   <div class="wrapper" id="app">
 
+    <!-- ===== LANDING PAGE ===== -->
+    <div id="landingScreen">
+      <div class="lp-page">
+
+        <div class="lp-hero">
+          <div class="hero-grid"></div>
+          <div class="hero-glow"></div>
+
+          <!-- Nav Login -->
+          <nav class="lp-nav">
+            <button class="btn-nav-login" onclick="showLogin()">
+              <i class="ti ti-login"></i> Entrar
+            </button>
+          </nav>
+
+          <div class="hero-inner">
+            <div class="shield-wrap"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+            <h1>Confie em nosso<br><span>banco de dados</span></h1>
+            <p>O sistema de armazenamento mais seguro do mundo. Seus dados protegidos com tecnologia de nível militar, disponível 24/7 sem interrupções.</p>
+            <button class="btn-hero" onclick="showRegister()">
+              <i class="ti ti-lock" aria-hidden="true"></i>
+              Acessar agora ↗
+            </button>
+          </div>
+        </div>
+
+        <div class="trust-bar">
+          <div class="trust-item"><i class="ti ti-certificate" aria-hidden="true"></i><strong>ISO 27001</strong> certificado</div>
+          <div class="trust-item"><i class="ti ti-shield-check" aria-hidden="true"></i><strong>256-bit</strong> criptografia</div>
+          <div class="trust-item"><i class="ti ti-eye-off" aria-hidden="true"></i><strong>Zero</strong> vazamentos</div>
+          <div class="trust-item"><i class="ti ti-clock-24" aria-hidden="true"></i><strong>99.99%</strong> uptime</div>
+        </div>
+
+        <div class="lp-features">
+          <div class="feat-card">
+            <div class="feat-icon" style="background:#0C2A4A"><i class="ti ti-lock" style="color:#378ADD" aria-hidden="true"></i></div>
+            <h3>Criptografia total</h3>
+            <p>Dados cifrados em repouso e em trânsito com AES-256.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:#0a2018"><i class="ti ti-server" style="color:#22c55e" aria-hidden="true"></i></div>
+            <h3>Backup automático</h3>
+            <p>Cópias redundantes em 3 regiões geográficas distintas.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:#1a1040"><i class="ti ti-eye-off" style="color:#a78bfa" aria-hidden="true"></i></div>
+            <h3>Privacidade total</h3>
+            <p>Nenhum dado é compartilhado ou vendido a terceiros.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:#1a1000"><i class="ti ti-activity" style="color:#facc15" aria-hidden="true"></i></div>
+            <h3>Monitoramento 24h</h3>
+            <p>Detecção de ameaças em tempo real com resposta imediata.</p>
+          </div>
+        </div>
+
+        <div class="lp-stats">
+          <div class="stat-col">
+            <div class="stat-num">12M+</div>
+            <div class="stat-lbl">registros protegidos</div>
+          </div>
+          <div class="stat-col">
+            <div class="stat-num">0</div>
+            <div class="stat-lbl">vazamentos em 8 anos</div>
+          </div>
+          <div class="stat-col">
+            <div class="stat-num">99.99%</div>
+            <div class="stat-lbl">disponibilidade</div>
+          </div>
+        </div>
+
+        <div class="lp-testimonial">
+          <div class="lp-stars">★★★★★</div>
+          <p class="lp-quote">"Migramos todos os nossos dados críticos para cá. A tranquilidade que temos hoje não tem preço — nunca mais perdemos uma noite de sono por preocupação com segurança."</p>
+          <div class="quote-author">
+            <div class="author-av">CR</div>
+            <div>
+              <div class="author-name">Carlos Ribeiro</div>
+              <div class="author-role">CTO, FinTech Brasil</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lp-cta">
+          <div class="cta-inner">
+            <h2>Seus dados merecem o melhor</h2>
+            <p>Comece agora — configuração em menos de 5 minutos.</p>
+            <button class="btn-cta" onclick="showRegister()">
+              <i class="ti ti-arrow-right" aria-hidden="true"></i>
+              Criar minha conta ↗
+            </button>
+            <div class="badge-row">
+              <div class="badge-pill"><i class="ti ti-credit-card-off" aria-hidden="true"></i> sem cartão</div>
+              <div class="badge-pill"><i class="ti ti-clock" aria-hidden="true"></i> 30 dias grátis</div>
+              <div class="badge-pill"><i class="ti ti-x" aria-hidden="true"></i> cancele quando quiser</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- /LANDING -->
+
     <!-- LOGIN -->
-    <div class="screen center-screen" id="loginScreen">
+    <div class="screen center-screen" id="loginScreen" style="display:none">
       <div class="card auth-card">
         <div class="auth-logo">
           <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
@@ -35,6 +327,7 @@
           <i class="ti ti-login"></i> Entrar
         </button>
         <button class="btn-link" onclick="showRegister()">Criar nova conta →</button>
+        <button class="btn-link" onclick="showLanding()" style="margin-top:0.25rem;color:var(--text-faint)">← Voltar ao início</button>
       </div>
     </div>
 
