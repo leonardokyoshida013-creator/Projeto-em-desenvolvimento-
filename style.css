@@ -399,3 +399,58 @@ tbody tr:hover td { background: var(--surface2); }
   .stats-grid { grid-template-columns: 1fr; }
   .stats-grid .stat-card:last-child { grid-column: span 1; }
 }
+
+/* ===== BOTÃO NOTAS ===== */
+.btn-notes {
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+.btn-notes:hover {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--text);
+}
+.btn-notes i { font-size: 14px; }
+
+/* ===== MODAL NOTAS ===== */
+.notes-modal-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 1.5rem;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+.notes-view-wrap {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.notes-view {
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--surface2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  min-height: 200px;
+  max-height: 50vh;
+}

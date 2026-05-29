@@ -155,6 +155,9 @@ function renderTable() {
 
   DB.getAll().forEach(u => {
     const canDelete = u.role !== 'adm' && u.id !== currentUser.id;
+    const notes = DB.getNotes(u.username);
+    const hasNotes = notes.trim().length > 0;
+    const wordCount = hasNotes ? notes.trim().split(/\s+/).length : 0;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
@@ -166,6 +169,12 @@ function renderTable() {
       <td style="color:var(--text-muted);font-family:'DM Mono',monospace;font-size:12px">@${escapeHtml(u.username)}</td>
       <td><span class="badge ${u.role}">${u.role === 'adm' ? 'ADM' : 'Usuário'}</span></td>
       <td style="color:var(--text-muted)">${u.createdAt}</td>
+      <td>${u.role === 'user'
+        ? hasNotes
+          ? `<button class="btn-notes" onclick="viewNotes('${u.username}','${u.name}')"><i class="ti ti-notes"></i> ${wordCount} pal.</button>`
+          : '<span style="color:var(--text-faint);font-size:12px">vazio</span>'
+        : '<span style="color:var(--text-faint);font-size:13px">—</span>'
+      }</td>
       <td>${canDelete
         ? `<button class="btn-delete" onclick="deleteUser(${u.id})">Remover</button>`
         : `<span style="color:var(--text-faint);font-size:13px">—</span>`
@@ -179,6 +188,27 @@ function deleteUser(id) {
   if (!confirm('Tem certeza que deseja remover este usuário?')) return;
   DB.deleteUser(id);
   renderTable();
+}
+
+// ---------- Modal ver notas (ADM) ----------
+
+function viewNotes(username, name) {
+  const notes = DB.getNotes(username);
+  const words = notes.trim() === '' ? 0 : notes.trim().split(/\s+/).length;
+  const chars = notes.length;
+  document.getElementById('notesModalTitle').textContent = 'Notas de ' + name;
+  document.getElementById('notesModalSub').textContent = '@' + username;
+  document.getElementById('notesModalContent').textContent = notes || '(sem conteúdo)';
+  document.getElementById('notesModalCount').textContent = words + ' palavras · ' + chars + ' caracteres';
+  flexEl('notesModalOverlay');
+}
+
+function closeNotesModal() {
+  hideEl('notesModalOverlay');
+}
+
+function handleNotesOverlayClick(e) {
+  if (e.target.id === 'notesModalOverlay') closeNotesModal();
 }
 
 // ---------- Modal de novo usuário ----------
