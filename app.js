@@ -264,13 +264,38 @@ async function deleteUser(id) {
 // ---------- Modal ver notas (ADM) ----------
 
 async function viewNotes(username, name) {
-  const notes = await DB.getNotes(username);
-  const words = notes.trim() === '' ? 0 : notes.trim().split(/\s+/).length;
-  const chars = notes.length;
-  document.getElementById('notesModalTitle').textContent   = 'Notas de ' + name;
-  document.getElementById('notesModalSub').textContent     = '@' + username;
-  document.getElementById('notesModalContent').textContent = notes || '(sem conteúdo)';
-  document.getElementById('notesModalCount').textContent   = words + ' palavras · ' + chars + ' caracteres';
+  const raw   = await DB.getNotes(username);
+  const notes = parseNotes(raw);
+
+  document.getElementById('notesModalTitle').textContent = 'Notas de ' + name;
+  document.getElementById('notesModalSub').textContent   = '@' + username;
+  document.getElementById('notesModalCount').textContent = `${notes.length} nota${notes.length !== 1 ? 's' : ''}`;
+
+  const list = document.getElementById('notesModalList');
+  list.innerHTML = '';
+
+  if (notes.length === 0) {
+    list.innerHTML = '<p style="color:var(--text-faint);font-size:13px;text-align:center;padding:1.5rem">(sem notas)</p>';
+    flexEl('notesModalOverlay');
+    return;
+  }
+
+  notes.sort((a, b) => b.date.localeCompare(a.date));
+  notes.forEach(note => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.875rem 1rem;display:flex;flex-direction:column;gap:5px';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:600;color:var(--text-muted);font-family:'DM Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:2px 7px">
+          <i class="ti ti-calendar" style="font-size:11px"></i> ${formatDate(note.date)}
+        </span>
+        ${note.desc ? `<span style="font-size:12px;color:var(--text-muted);font-style:italic">${escapeHtml(note.desc)}</span>` : ''}
+      </div>
+      <p style="font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap">${escapeHtml(note.content)}</p>
+    `;
+    list.appendChild(card);
+  });
+
   flexEl('notesModalOverlay');
 }
 
@@ -336,46 +361,151 @@ async function createUser() {
   setTimeout(async () => { closeModal(); await renderTable(); }, 1200);
 }
 
-// ---------- Bloco de notas ----------
+// ---------- Sistema de notas estruturadas ----------
 
-let noteSaveTimer = null;
+let editingNoteId = null; // null = nova nota, number = editando existente
 
 async function loadNotes() {
-  const textarea = document.getElementById('notepad');
-  if (!textarea) return;
-  textarea.value = await DB.getNotes(currentUser.username);
-  updateWordCount();
+  await renderNotesList();
 }
 
-function onNoteInput() {
-  updateWordCount();
-  showNoteStatus('salvando…', false);
-  clearTimeout(noteSaveTimer);
-  noteSaveTimer = setTimeout(async () => {
-    await DB.saveNotes(currentUser.username, document.getElementById('notepad').value);
-    showNoteStatus('salvo ✓', true);
-  }, 800);
+async function renderNotesList() {
+  const wrap = document.getElementById('notesListWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<p style="color:var(--text-faint);font-size:13px;text-align:center;padding:1.5rem">Carregando…</p>';
+
+  const raw   = await DB.getNotes(currentUser.username);
+  const notes = parseNotes(raw);
+
+  if (notes.length === 0) {
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:3rem 1rem;color:var(--text-faint)">
+        <i class="ti ti-notes" style="font-size:40px;display:block;margin-bottom:.75rem"></i>
+        <p style="font-size:14px">Nenhuma nota ainda.<br>Clique em <strong>+ Nova nota</strong> para começar.</p>
+      </div>`;
+    return;
+  }
+
+  // Ordena por data decrescente
+  notes.sort((a, b) => b.date.localeCompare(a.date));
+
+  wrap.innerHTML = '';
+  notes.forEach(note => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;display:flex;flex-direction:column;gap:6px';
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);font-family:'DM Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 8px">
+            <i class="ti ti-calendar" style="font-size:12px"></i> ${formatDate(note.date)}
+          </span>
+          ${note.desc ? `<span style="font-size:12px;color:var(--text-muted);font-style:italic">${escapeHtml(note.desc)}</span>` : ''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn-icon" title="Editar" onclick="openNoteModal(${note.id})" style="width:26px;height:26px;font-size:15px"><i class="ti ti-pencil"></i></button>
+          <button class="btn-icon" title="Excluir" onclick="deleteNote(${note.id})" style="width:26px;height:26px;font-size:15px;color:var(--red-text)"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <p style="font-size:14px;color:var(--text);line-height:1.65;white-space:pre-wrap;margin-top:2px">${escapeHtml(note.content)}</p>
+    `;
+    wrap.appendChild(card);
+  });
 }
 
-function updateWordCount() {
-  const text  = document.getElementById('notepad').value;
-  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-  const chars = text.length;
-  document.getElementById('wordCount').textContent = `${words} palavra${words !== 1 ? 's' : ''} · ${chars} caractere${chars !== 1 ? 's' : ''}`;
+function parseNotes(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [];
 }
 
-function showNoteStatus(msg, saved) {
-  const el = document.getElementById('noteStatus');
-  el.textContent = msg;
-  el.style.color = saved ? 'var(--green-text)' : 'var(--text-faint)';
+function formatDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
 }
 
-async function clearNotes() {
-  if (!confirm('Deseja apagar todas as notas? Isso não pode ser desfeito.')) return;
-  document.getElementById('notepad').value = '';
-  await DB.saveNotes(currentUser.username, '');
-  updateWordCount();
-  showNoteStatus('apagado ✓', true);
+function openNoteModal(id = null) {
+  editingNoteId = id;
+  hideAlert('noteModalError');
+
+  if (id !== null) {
+    // Modo edição — carrega dados da nota
+    DB.getNotes(currentUser.username).then(raw => {
+      const notes = parseNotes(raw);
+      const note  = notes.find(n => n.id === id);
+      if (!note) return;
+      document.getElementById('noteModalTitle').textContent = 'Editar nota';
+      document.getElementById('noteDate').value    = note.date;
+      document.getElementById('noteDesc').value    = note.desc;
+      document.getElementById('noteContent').value = note.content;
+      flexEl('noteModalOverlay');
+    });
+  } else {
+    // Modo criação — data padrão = hoje
+    document.getElementById('noteModalTitle').textContent = 'Nova nota';
+    document.getElementById('noteDate').value    = new Date().toISOString().slice(0, 10);
+    document.getElementById('noteDesc').value    = '';
+    document.getElementById('noteContent').value = '';
+    flexEl('noteModalOverlay');
+    setTimeout(() => document.getElementById('noteDesc').focus(), 50);
+  }
+}
+
+function closeNoteModal() {
+  hideEl('noteModalOverlay');
+  editingNoteId = null;
+}
+
+function handleNoteOverlayClick(e) {
+  if (e.target.id === 'noteModalOverlay') closeNoteModal();
+}
+
+async function saveNoteModal() {
+  const date    = document.getElementById('noteDate').value;
+  const desc    = document.getElementById('noteDesc').value.trim();
+  const content = document.getElementById('noteContent').value.trim();
+
+  if (!date) {
+    showAlert('noteModalError', 'Selecione uma data.');
+    return;
+  }
+  if (!content) {
+    showAlert('noteModalError', 'O conteúdo não pode estar vazio.');
+    return;
+  }
+
+  const btn = document.getElementById('noteModalSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+
+  const raw   = await DB.getNotes(currentUser.username);
+  const notes = parseNotes(raw);
+
+  if (editingNoteId !== null) {
+    const idx = notes.findIndex(n => n.id === editingNoteId);
+    if (idx !== -1) { notes[idx].date = date; notes[idx].desc = desc; notes[idx].content = content; }
+  } else {
+    const newId = notes.length > 0 ? Math.max(...notes.map(n => n.id)) + 1 : 1;
+    notes.push({ id: newId, date, desc, content });
+  }
+
+  await DB.saveNotes(currentUser.username, JSON.stringify(notes));
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-device-floppy"></i> Salvar nota';
+
+  closeNoteModal();
+  await renderNotesList();
+}
+
+async function deleteNote(id) {
+  if (!confirm('Excluir esta nota? Não pode ser desfeito.')) return;
+  const raw   = await DB.getNotes(currentUser.username);
+  const notes = parseNotes(raw).filter(n => n.id !== id);
+  await DB.saveNotes(currentUser.username, JSON.stringify(notes));
+  await renderNotesList();
 }
 
 // ---------- Logout ----------
@@ -411,5 +541,8 @@ window.deleteUser         = deleteUser;
 window.viewNotes          = viewNotes;
 window.closeNotesModal    = closeNotesModal;
 window.handleNotesOverlayClick = handleNotesOverlayClick;
-window.onNoteInput        = onNoteInput;
-window.clearNotes         = clearNotes;
+window.openNoteModal      = openNoteModal;
+window.closeNoteModal     = closeNoteModal;
+window.handleNoteOverlayClick = handleNoteOverlayClick;
+window.saveNoteModal      = saveNoteModal;
+window.deleteNote         = deleteNote;

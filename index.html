@@ -416,24 +416,38 @@
         <div class="notepad-header">
           <div>
             <h2>Minhas notas</h2>
-            <p>Suas anotações são salvas automaticamente</p>
+            <p>Cada nota tem data e motivo registrados</p>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="clearNotes()">
-            <i class="ti ti-trash"></i> Limpar
+          <button class="btn btn-primary btn-sm" onclick="openNoteModal()">
+            <i class="ti ti-plus"></i> Nova nota
           </button>
         </div>
-        <div class="notepad-wrap">
-          <textarea
-            id="notepad"
-            class="notepad"
-            placeholder="Escreva aqui suas anotações… tudo é salvo automaticamente."
-            oninput="onNoteInput()"
-            spellcheck="true"
-          ></textarea>
-          <div class="notepad-footer">
-            <span id="wordCount">0 palavras · 0 caracteres</span>
-            <span id="noteStatus"></span>
+        <div id="notesListWrap"></div>
+      </div>
+
+      <!-- MODAL NOVA NOTA -->
+      <div class="modal-overlay" id="noteModalOverlay" style="display:none" onclick="handleNoteOverlayClick(event)">
+        <div class="card modal-card" style="max-width:440px">
+          <div class="modal-header">
+            <h3 id="noteModalTitle">Nova nota</h3>
+            <button class="btn-icon" onclick="closeNoteModal()" aria-label="Fechar"><i class="ti ti-x"></i></button>
           </div>
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="noteDate" />
+          </div>
+          <div class="field">
+            <label>Motivo / descrição breve</label>
+            <input type="text" id="noteDesc" placeholder="Ex: reunião de alinhamento, ideia de projeto…" maxlength="100" />
+          </div>
+          <div class="field">
+            <label>Conteúdo</label>
+            <textarea id="noteContent" style="width:100%;min-height:130px;padding:9px 12px;border:1px solid var(--border-strong);border-radius:var(--radius);font-family:inherit;font-size:14px;resize:vertical;outline:none;background:var(--surface);color:var(--text)" placeholder="Escreva o conteúdo da nota…" spellcheck="true"></textarea>
+          </div>
+          <div class="alert alert-error" id="noteModalError"></div>
+          <button class="btn btn-primary" id="noteModalSaveBtn" onclick="saveNoteModal()">
+            <i class="ti ti-device-floppy"></i> Salvar nota
+          </button>
         </div>
       </div>
 
@@ -449,12 +463,9 @@
           </div>
           <button class="btn-icon" onclick="closeNotesModal()" aria-label="Fechar"><i class="ti ti-x"></i></button>
         </div>
-        <div class="notes-view-wrap">
-          <pre id="notesModalContent" class="notes-view"></pre>
-          <div class="notepad-footer">
-            <span id="notesModalCount"></span>
-            <span style="font-size:11px;color:var(--text-faint)">somente leitura</span>
-          </div>
+        <div id="notesModalList" style="overflow-y:auto;max-height:60vh;display:flex;flex-direction:column;gap:10px;padding:4px 2px"></div>
+        <div style="padding-top:10px;border-top:1px solid var(--border);margin-top:4px">
+          <span id="notesModalCount" style="font-size:12px;color:var(--text-faint)"></span>
         </div>
       </div>
     </div>
